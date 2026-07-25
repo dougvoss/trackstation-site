@@ -1,0 +1,98 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>TrackStation — playback ao vivo para músicos</title>
+<meta name="description" content="Ferramenta de playback para quem toca ao vivo com VS num canal e click no outro. Operável inteiramente por footswitch, com a confiabilidade como prioridade.">
+<meta name="theme-color" content="#0E1116">
+<link rel="icon" href="assets/favicon.png" sizes="32x32">
+<link rel="canonical" href="https://trackstation.com.br/">
+<meta property="og:type" content="website">
+<meta property="og:title" content="TrackStation — playback ao vivo para músicos">
+<meta property="og:description" content="VS num canal, click no outro. Operável inteiramente por footswitch.">
+<meta property="og:url" content="https://trackstation.com.br/">
+<meta property="og:image" content="https://trackstation.com.br/assets/og.png">
+<meta property="og:locale" content="pt_BR">
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+<main>
+
+  <header class="hero">
+    <img class="marca" src="assets/icon.png" width="88" height="88"
+         alt="Ícone do TrackStation: waveform em âmbar e ciano dentro de um hexágono escuro">
+    <h1>TrackStation</h1>
+    <p class="tese">Playback ao vivo para músicos</p>
+    <p class="sub">
+      Uma ferramenta de trabalho, não um player de música.
+      <span class="vs">VS</span> num canal, <span class="click">click</span> no outro,
+      o show inteiro no pedal.
+    </p>
+  </header>
+
+  <figure class="moldura">
+    <img src="assets/palco.png"
+         alt="Tela do Modo Palco do TrackStation: setlist em várias colunas, waveform dos dois canais com o click em âmbar e o VS em ciano, e faders de MASTER, VS e CLICK.">
+  </figure>
+
+  <section class="blocos">
+
+    <article class="bloco">
+      <h2>Dois canais, controle independente</h2>
+      <p>
+        <span class="vs">VS</span> num canal, <span class="click">click</span> no outro.
+        Fader separado para cada um, e duck para falar por cima do playback sem perder
+        a referência. O app detecta sozinho qual lado é qual.
+      </p>
+    </article>
+
+    <article class="bloco">
+      <h2>Operável por footswitch</h2>
+      <p>
+        Mãos no instrumento. Selecionar, tocar, pausar, duck, mute, fade — tudo por pedal.
+        Comando fora de hora é ignorado em vez de derrubar o show.
+      </p>
+    </article>
+
+    <article class="bloco">
+      <h2>Confiabilidade primeiro</h2>
+      <p>
+        Importar copia o arquivo para dentro do app, e a identidade vem do SHA-256 do
+        conteúdo. Nada depende de uma pasta externa que alguém moveu na véspera.
+      </p>
+    </article>
+
+  </section>
+
+  <footer class="rodape">
+    <p class="estagio">
+      Em desenvolvimento ativo. Ainda não há versão pública.
+    </p>
+    <p class="contato">
+      Toca com VS e click e quer acompanhar?
+      <span id="fala"><noscript>escreva para contact arroba trackstation.com.br</noscript></span>
+    </p>
+    <p class="assinatura">TrackStation · by Douglas Voss</p>
+  </footer>
+
+</main>
+
+<script>
+  // Monta o mailto em tempo de execução para não servir o endereço em texto
+  // plano ao scraper. Sem JS, o <noscript> acima entrega o mesmo endereço.
+  (function () {
+    var usuario = 'contact';
+    var dominio = 'trackstation' + '.com' + '.br';
+    var alvo = document.getElementById('fala');
+    var a = document.createElement('a');
+    a.href = 'mailto:' + usuario + '@' + dominio;
+    a.textContent = 'Fala comigo';
+    alvo.textContent = '';
+    alvo.appendChild(a);
+  })();
+</script>
+
+</body>
+</html>

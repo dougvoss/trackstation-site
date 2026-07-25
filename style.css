@@ -1,0 +1,161 @@
+/* Paleta do app — lib/presentation/theme.dart.
+   O site usa as mesmas cores porque é o mesmo produto.
+   faint (#5C6675) está deliberadamente ausente: 3,25:1 reprova AA. */
+:root {
+  --ground: #0E1116;
+  --surface: #161B22;
+  --surface2: #1E252E;
+  --line: #2A313B;
+  --text: #EAEEF3;
+  --muted: #8A94A3;
+  --amber: #F5B841;   /* click */
+  --cyan: #35C6D6;    /* VS */
+
+  --largura: 68rem;
+  --leitura: 46rem;
+}
+
+@font-face {
+  font-family: 'Space Grotesk';
+  src: url('assets/fonts/space-grotesk-latin.woff2') format('woff2');
+  font-weight: 300 700;
+  font-display: swap;
+  font-style: normal;
+}
+
+*, *::before, *::after { box-sizing: border-box; }
+
+body {
+  margin: 0;
+  background: var(--ground);
+  color: var(--text);
+  font: 400 1.0625rem/1.65 system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif;
+  -webkit-font-smoothing: antialiased;
+}
+
+img { max-width: 100%; height: auto; display: block; }
+
+main {
+  max-width: var(--largura);
+  margin: 0 auto;
+  padding: clamp(2.5rem, 7vw, 6rem) clamp(1.25rem, 5vw, 3rem);
+}
+
+/* --- hero --- */
+
+.hero { text-align: center; }
+
+.marca {
+  margin: 0 auto clamp(1.25rem, 3vw, 2rem);
+  width: clamp(64px, 12vw, 88px);
+  height: auto;
+}
+
+h1 {
+  font-family: 'Space Grotesk', system-ui, sans-serif;
+  font-weight: 700;
+  font-size: clamp(2.5rem, 9vw, 4.5rem);
+  letter-spacing: -0.03em;
+  line-height: 1.02;
+  margin: 0;
+}
+
+.tese {
+  font-family: 'Space Grotesk', system-ui, sans-serif;
+  font-weight: 500;
+  font-size: clamp(1.125rem, 3.5vw, 1.5rem);
+  color: var(--amber);
+  letter-spacing: -0.01em;
+  margin: 0.75rem 0 0;
+}
+
+.sub {
+  max-width: var(--leitura);
+  margin: 1.25rem auto 0;
+  color: var(--muted);
+  font-size: clamp(1rem, 2.4vw, 1.125rem);
+}
+
+/* Âmbar é o click, ciano é o VS — mesma semântica do app. */
+.click { color: var(--amber); font-weight: 600; }
+.vs { color: var(--cyan); font-weight: 600; }
+
+/* --- imagem --- */
+
+.moldura {
+  margin: clamp(2.5rem, 7vw, 5rem) 0 0;
+  padding: clamp(0.375rem, 1.2vw, 0.75rem);
+  background: var(--surface2);
+  border: 1px solid var(--line);
+  border-radius: clamp(8px, 1.2vw, 14px);
+}
+
+.moldura img { border-radius: clamp(5px, 0.8vw, 9px); }
+
+/* --- blocos --- */
+
+.blocos {
+  display: grid;
+  gap: clamp(1rem, 2.5vw, 1.5rem);
+  grid-template-columns: 1fr;
+  margin: clamp(2.5rem, 7vw, 5rem) 0 0;
+}
+
+@media (min-width: 56rem) {
+  .blocos { grid-template-columns: repeat(3, 1fr); }
+}
+
+.bloco {
+  background: var(--surface);
+  border: 1px solid var(--line);
+  border-radius: 12px;
+  padding: clamp(1.25rem, 2.5vw, 1.75rem);
+}
+
+.bloco h2 {
+  font-family: 'Space Grotesk', system-ui, sans-serif;
+  font-weight: 700;
+  font-size: 1.0625rem;
+  letter-spacing: -0.01em;
+  margin: 0 0 0.625rem;
+}
+
+.bloco p {
+  margin: 0;
+  color: var(--muted);
+  font-size: 0.9375rem;
+  line-height: 1.6;
+}
+
+/* --- rodapé --- */
+
+.rodape {
+  margin: clamp(3rem, 8vw, 6rem) 0 0;
+  padding-top: clamp(1.5rem, 4vw, 2.5rem);
+  border-top: 1px solid var(--line);
+  text-align: center;
+}
+
+.estagio { margin: 0; color: var(--text); font-weight: 500; }
+
+.contato { margin: 0.5rem 0 0; color: var(--muted); }
+
+.contato a {
+  color: var(--cyan);
+  text-decoration-thickness: 1px;
+  text-underline-offset: 3px;
+}
+
+.contato a:hover { color: var(--text); }
+
+.assinatura {
+  margin: clamp(1.5rem, 4vw, 2.5rem) 0 0;
+  color: var(--muted);
+  font-size: 0.875rem;
+}
+
+/* Respeita quem pediu menos movimento — não há animação hoje, mas o site
+   não deve introduzir nenhuma sem passar por aqui. */
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after { animation: none !important; transition: none !important; }
+}
