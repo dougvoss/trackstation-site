@@ -18,9 +18,12 @@ DESTINO = (pathlib.Path(__file__).resolve().parent.parent
 
 
 def baixar(url, args=()):
-    return subprocess.run(
-        ["curl", "-sS", "-m", "30", "-A", UA, *args, url],
-        capture_output=True, check=True).stdout
+    try:
+        return subprocess.run(
+            ["curl", "-sS", "-m", "30", "-A", UA, *args, url],
+            capture_output=True, check=True).stdout
+    except subprocess.CalledProcessError as e:
+        sys.exit(f"curl falhou: {e.stderr.decode(errors='replace')}")
 
 
 def main():
@@ -29,7 +32,10 @@ def main():
     latin = [corpo for nome, corpo in blocos if nome == "latin"]
     if not latin:
         sys.exit("subset latin não encontrado no CSS do Google Fonts")
-    url = re.search(r"url\((https://[^)]+)\)", latin[0]).group(1)
+    m = re.search(r"url\((https://[^)]+)\)", latin[0])
+    if not m:
+        sys.exit("URL da fonte não encontrada no bloco latin")
+    url = m.group(1)
 
     dados = baixar(url)
     if dados[:4] != b"wOF2":
