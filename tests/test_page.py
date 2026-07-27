@@ -23,6 +23,10 @@ def _css():
     return _read("style.css")
 
 
+def _og_html():
+    return _read("tools/og.html")
+
+
 def _luminancia(cor_hex):
     r, g, b = (int(cor_hex[i:i + 2], 16) / 255 for i in (1, 3, 5))
     def linear(c):
@@ -82,6 +86,19 @@ def test_fonte_e_local():
     woff2 = ROOT / "assets/fonts/space-grotesk-latin.woff2"
     assert woff2.exists(), "arquivo da fonte não existe"
     assert woff2.stat().st_size < 60 * 1024, "fonte grande demais para inline crítico"
+
+
+def test_og_html_nenhuma_requisicao_externa():
+    urls = re.findall(r"https?://[^\s\"')]+", _og_html())
+    externas = [u for u in urls if "trackstation.com.br" not in u]
+    assert not externas, f"URLs externas encontradas em tools/og.html: {externas}"
+
+
+def test_og_html_fonte_e_local():
+    html = _og_html()
+    assert "assets/fonts/space-grotesk-latin.woff2" in html
+    woff2 = ROOT / "assets/fonts/space-grotesk-latin.woff2"
+    assert woff2.exists(), "arquivo da fonte não existe"
 
 
 # --- proteção do e-mail ---

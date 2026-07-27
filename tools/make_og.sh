@@ -13,5 +13,12 @@ google-chrome --headless=new --disable-gpu --no-sandbox --hide-scrollbars \
   --screenshot="$saida" \
   "file://$PWD/tools/og.html" 2>/dev/null
 
+esperado="1200x630"
 dimensoes=$(python3 -c "from PIL import Image; im = Image.open('$saida'); print(f'{im.width}x{im.height}')")
+
+if [ "$dimensoes" != "$esperado" ]; then
+  echo "erro: $saida saiu com $dimensoes, esperado $esperado — não faça commit deste arquivo; verifique --window-size e a versão do Chrome" >&2
+  exit 1
+fi
+
 printf '%s %s\n' "$saida" "$dimensoes"
