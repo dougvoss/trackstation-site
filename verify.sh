@@ -80,6 +80,53 @@ print('OK' if all_found else 'FAIL')
   fi
 }
 
+checa_dnssec() {  # checa_dnssec <rótulo> <nome>
+  local dados resposta
+
+  # Tentar com Cloudflare primeiro
+  resposta=$(consulta "$2" DS "https://cloudflare-dns.com/dns-query")
+  dados=$(echo "$resposta" | python3 -c "
+import sys, json
+try:
+  d = json.load(sys.stdin)
+  has_ds = 'sim' if (d.get('Answer') or []) else 'nao'
+  has_ad = 'AD' if d.get('AD') else 'sem-AD'
+  print(has_ds + ' ' + has_ad)
+except Exception:
+  print('__ERRO__')
+" 2>/dev/null || echo "__ERRO__")
+
+  # Se erro, tentar com Google
+  if [ "$dados" = "__ERRO__" ]; then
+    resposta=$(consulta "$2" DS "https://dns.google/resolve")
+    dados=$(echo "$resposta" | python3 -c "
+import sys, json
+try:
+  d = json.load(sys.stdin)
+  has_ds = 'sim' if (d.get('Answer') or []) else 'nao'
+  has_ad = 'AD' if d.get('AD') else 'sem-AD'
+  print(has_ds + ' ' + has_ad)
+except Exception:
+  print('__ERRO__')
+" 2>/dev/null || echo "__ERRO__")
+  fi
+
+  # Se ainda erro, reportar (não é DNSSEC caiu, é falha na consulta)
+  if [ "$dados" = "__ERRO__" ]; then
+    printf '  ERRO  %-18s consulta DNS falhou\n' "$1"
+    falhas=$((falhas + 1))
+    return
+  fi
+
+  # Check if DS was found
+  if printf '%s' "$dados" | grep -q "^sim"; then
+    printf '  OK    %-18s %s\n' "$1" "$dados"
+  else
+    printf '  FALHA %-18s DS ausente — DNSSEC caiu\n' "$1"
+    falhas=$((falhas + 1))
+  fi
+}
+
 echo "== e-mail =="
 checa "MX"     "$DOM"          MX   "SET:mx1.improvmx.com|mx2.improvmx.com"
 checa "SPF"    "$DOM"          TXT  "include:spf\.improvmx\.com"
@@ -90,17 +137,7 @@ checa "A apex" "$DOM"          A    "SET:185.199.108.153|185.199.109.153|185.199
 checa "CNAME"  "www.$DOM"      CNAME "dougvoss\.github\.io"
 
 echo "== DNSSEC =="
-ds=$(consulta "$DOM" DS | python3 -c "
-import sys, json
-d = json.load(sys.stdin)
-print('sim' if (d.get('Answer') or []) else 'nao', 'AD' if d.get('AD') else 'sem-AD')
-")
-if printf '%s' "$ds" | grep -q "^sim"; then
-  printf '  OK    %-18s %s\n' "DS publicado" "$ds"
-else
-  printf '  FALHA %-18s DS ausente — DNSSEC caiu\n' "DS publicado"
-  falhas=$((falhas + 1))
-fi
+checa_dnssec "DS publicado" "$DOM"
 
 echo "== HTTPS =="
 codigo=$(curl -s -o /dev/null -m 20 -w '%{http_code}' "https://$DOM/")
