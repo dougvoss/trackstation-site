@@ -1,0 +1,75 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<title>TrackStation — cartão de compartilhamento</title>
+<style>
+  /* Cartão de compartilhamento (og:image), 1200x630 fixo.
+     Mesma paleta e tipografia do site — usa a fonte local, sem CDN. */
+  @font-face {
+    font-family: 'Space Grotesk';
+    src: url('../assets/fonts/space-grotesk-latin.woff2') format('woff2');
+    font-weight: 300 700;
+    font-style: normal;
+  }
+
+  :root {
+    --ground: #0E1116;
+    --text: #EAEEF3;
+    --amber: #F5B841;
+  }
+
+  * { box-sizing: border-box; }
+
+  html, body {
+    margin: 0;
+    padding: 0;
+    width: 1200px;
+    height: 630px;
+    overflow: hidden;
+    background: var(--ground);
+  }
+
+  .cartao {
+    width: 1200px;
+    height: 630px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+  }
+
+  .icone {
+    width: 140px;
+    height: 140px;
+    margin-bottom: 2rem;
+  }
+
+  h1 {
+    font-family: 'Space Grotesk', system-ui, sans-serif;
+    font-weight: 700;
+    font-size: 88px;
+    letter-spacing: -0.03em;
+    line-height: 1;
+    color: var(--text);
+    margin: 0;
+  }
+
+  .tese {
+    font-family: 'Space Grotesk', system-ui, sans-serif;
+    font-weight: 500;
+    font-size: 34px;
+    letter-spacing: -0.01em;
+    color: var(--amber);
+    margin: 1rem 0 0;
+  }
+</style>
+</head>
+<body>
+  <div class="cartao">
+    <img class="icone" src="../assets/icon.png" alt="">
+    <h1>TrackStation</h1>
+    <p class="tese">Playback ao vivo para músicos</p>
+  </div>
+</body>
+</html>
