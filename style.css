@@ -1,6 +1,10 @@
 /* Paleta do app — lib/presentation/theme.dart.
    O site usa as mesmas cores porque é o mesmo produto.
-   faint (#5C6675) está deliberadamente ausente: 3,25:1 reprova AA. */
+   faint (#5C6675) está deliberadamente ausente: 3,25:1 reprova AA.
+
+   Direção visual: painel de equipamento de palco lido no escuro. Rótulos em
+   mono maiúsculo como serigrafia de gear, filetes no lugar de sombras, e os
+   dois canais (VS ciano, click âmbar) como as únicas cores da página. */
 :root {
   /* Declara ao navegador que a página é escura, para que barra de rolagem e
      controles nativos venham escuros também. Não é prefers-color-scheme: não
@@ -8,16 +12,23 @@
   color-scheme: dark;
 
   --ground: #0E1116;
+  --panel: #12171E;   /* face dos módulos, um degrau acima do fundo */
   --surface: #161B22;
   --surface2: #1E252E;
   --line: #2A313B;
+  --edge: #39424E;    /* filete visível: escala de fader e borda de botão */
   --text: #EAEEF3;
   --muted: #8A94A3;
   --amber: #F5B841;   /* click */
   --cyan: #35C6D6;    /* VS */
 
-  --largura: 68rem;
-  --leitura: 46rem;
+  --display: 'Space Grotesk', system-ui, -apple-system, sans-serif;
+  /* Space Mono é a origem tipográfica da Space Grotesk — o pareamento é a
+     mesma letra em dois estados, não duas famílias que se toleram. */
+  --mono: 'Space Mono', ui-monospace, SFMono-Regular, Menlo, monospace;
+
+  --largura: 72rem;
+  --gutter: clamp(1.25rem, 5vw, 3rem);
 }
 
 @font-face {
@@ -28,142 +39,450 @@
   font-style: normal;
 }
 
+@font-face {
+  font-family: 'Space Mono';
+  src: url('assets/fonts/space-mono-latin.woff2') format('woff2');
+  font-weight: 400;
+  font-display: swap;
+  font-style: normal;
+}
+
 *, *::before, *::after { box-sizing: border-box; }
 
 body {
   margin: 0;
   background: var(--ground);
   color: var(--text);
-  font: 400 1.0625rem/1.65 system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif;
+  font: 400 1.0625rem/1.65 var(--display);
   -webkit-font-smoothing: antialiased;
 }
 
 img { max-width: 100%; height: auto; display: block; }
 
+/* Um só elemento interativo na página. O foco tem de ser visível nele. */
+:focus-visible {
+  outline: 2px solid var(--text);
+  outline-offset: 3px;
+  border-radius: 2px;
+}
+
+/* Rótulo serigrafado: todo texto de serviço da página usa esta única forma —
+   mono, maiúsculo, entrelinha travada. A cor vem de quem o usa. */
+.rot {
+  font: 400 0.75rem/1 var(--mono);
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+}
+
+/* --- barra de marca --- */
+
+.barra {
+  background: var(--panel);
+  border-bottom: 1px solid var(--line);
+}
+
+.barra-conteudo {
+  max-width: var(--largura);
+  margin: 0 auto;
+  padding: 0.875rem var(--gutter);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  /* Em tela estreita o chip de estado não cabe na mesma linha da marca; sem o
+     wrap ele encostaria no nome. Quebrar é melhor que apertar. */
+  flex-wrap: wrap;
+  gap: 0.625rem 1.25rem;
+}
+
+.marca { display: flex; align-items: center; gap: 0.625rem; }
+
+.marca img { width: clamp(32px, 6vw, 40px); height: auto; }
+
+.marca-nome {
+  font-weight: 700;
+  font-size: clamp(1rem, 2.6vw, 1.1875rem);
+  letter-spacing: -0.02em;
+}
+
+/* Selo de marca alinhado ao topo das maiúsculas, em peso e cor de nota de
+   rodapé: identifica sem competir com o logotipo. */
+.reg {
+  font-size: 0.5em;
+  font-weight: 400;
+  vertical-align: 0.72em;
+  letter-spacing: 0;
+  color: var(--muted);
+}
+
+/* LED de painel: respira devagar porque o desenvolvimento está em curso. */
+@keyframes pulso {
+  0%, 100% { opacity: 0.3; }
+  50% { opacity: 1; }
+}
+
+.estado::before {
+  content: '';
+  display: inline-block;
+  width: 6px;
+  height: 6px;
+  margin-right: 0.5rem;
+  border-radius: 50%;
+  background: currentColor;
+  animation: pulso 3s ease-in-out infinite;
+}
+
+/* Mostrador de estado: chip de filete, como um display de painel. */
+.estado {
+  color: var(--muted);
+  border: 1px solid var(--line);
+  border-radius: 2px;
+  padding: 0.4rem 0.5rem;
+  white-space: nowrap;
+}
+
+/* --- corpo --- */
+
 main {
   max-width: var(--largura);
   margin: 0 auto;
-  padding: clamp(2.5rem, 7vw, 6rem) clamp(1.25rem, 5vw, 3rem);
+  padding: clamp(3rem, 8vw, 6rem) var(--gutter) clamp(3rem, 8vw, 5rem);
 }
 
 /* --- hero --- */
 
-.hero { text-align: center; }
-
-.marca {
-  margin: 0 auto clamp(1.25rem, 3vw, 2rem);
-  width: clamp(64px, 12vw, 88px);
-  height: auto;
+.eyebrow {
+  margin: 0 0 clamp(1rem, 2.5vw, 1.5rem);
+  color: var(--muted);
 }
 
 h1 {
-  font-family: 'Space Grotesk', system-ui, sans-serif;
   font-weight: 700;
-  font-size: clamp(2.5rem, 9vw, 4.5rem);
-  letter-spacing: -0.03em;
-  line-height: 1.02;
+  font-size: clamp(2.125rem, 5.8vw, 4.125rem);
+  letter-spacing: -0.035em;
+  line-height: 1.06;
   margin: 0;
 }
 
-.tese {
-  font-family: 'Space Grotesk', system-ui, sans-serif;
-  font-weight: 500;
-  font-size: clamp(1.125rem, 3.5vw, 1.5rem);
-  color: var(--amber);
-  letter-spacing: -0.01em;
-  margin: 0.75rem 0 0;
-}
+/* Uma frase por linha: é assim que a tese é dita em voz alta. */
+.linha { display: block; }
 
 .sub {
-  max-width: var(--leitura);
-  margin: 1.25rem auto 0;
+  max-width: 38rem;
+  margin: clamp(1.25rem, 3vw, 1.75rem) 0 0;
   color: var(--muted);
-  font-size: clamp(1rem, 2.4vw, 1.125rem);
+  font-size: clamp(1rem, 2.2vw, 1.1875rem);
+  text-wrap: pretty;
 }
 
 /* Âmbar é o click, ciano é o VS — mesma semântica do app. */
-.click { color: var(--amber); font-weight: 600; }
-.vs { color: var(--cyan); font-weight: 600; }
+.vs { color: var(--cyan); }
+.click { color: var(--amber); }
+
+p .vs, p .click { font-weight: 600; }
+
+/* --- os dois canais --- */
+
+/* Diagrama de ligação: nome do canal, a pista, e para onde ela vai. As duas
+   colunas de rótulo são max-content, então as pistas começam e terminam
+   alinhadas sem nenhuma largura fixa. */
+.canais {
+  margin: clamp(2.5rem, 6vw, 4rem) 0 0;
+  /* bloco contêiner da cabeça de leitura, que é posicionada em cima das pistas */
+  position: relative;
+  /* Componente, não régua de página inteira: a mesma medida do texto do hero. */
+  max-width: 46rem;
+  display: grid;
+  /* Duas colunas em tela estreita: com três, os dois rótulos comem a largura e
+     a pista fica com 100px. O destino desce para baixo da pista. */
+  grid-template-columns: max-content minmax(0, 1fr);
+  align-items: center;
+  gap: 0.75rem 1.25rem;
+}
+
+
+/* display: contents entrega rótulos e pista direto à grade do pai. A cor do
+   canal continua descendo por herança. */
+.canal { display: contents; }
+
+/* Cada item declara sua coluna. Com posição automática, o nome e a pista do
+   segundo canal escorregam para a coluna do destino e a tira desmonta. */
+.canal-nome { grid-column: 1; color: currentColor; }
+
+/* Medidor segmentado: currentColor herda a cor do canal, então a pista é o
+   canal — nunca uma barra decorativa com cor própria. */
+.pista {
+  grid-column: 2;
+  height: 8px;
+  background-image: repeating-linear-gradient(90deg,
+    currentColor 0 2px, transparent 2px 6px);
+  transform-origin: left center;
+}
+
+.canal-destino {
+  grid-column: 2;
+  color: var(--muted);
+  font-size: 0.6875rem;
+}
+
+@media (min-width: 40rem) {
+  .canais { grid-template-columns: max-content minmax(0, 1fr) max-content; }
+  .canal-destino { grid-column: 3; }
+}
+
+.canal-nota {
+  grid-column: 2 / -1;
+  margin: 0.375rem 0 0;
+  color: var(--muted);
+  font-size: 0.6875rem;
+  letter-spacing: 0.16em;
+  line-height: 1.5;
+}
+
+/* --- cabeçalho de seção --- */
+
+.cabeca {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  margin: 0 0 1rem;
+}
+
+.cabeca h2 {
+  margin: 0;
+  font-weight: 400;
+  color: var(--muted);
+}
+
+.risco { flex: 1; height: 1px; background: var(--line); }
 
 /* --- imagem --- */
 
+.palco { margin: clamp(3rem, 8vw, 5.5rem) 0 0; }
+
+.figura { margin: 0; }
+
 .moldura {
-  margin: clamp(2.5rem, 7vw, 5rem) 0 0;
-  padding: clamp(0.375rem, 1.2vw, 0.75rem);
+  padding: clamp(0.375rem, 1.2vw, 0.625rem);
   background: var(--surface2);
   border: 1px solid var(--line);
-  border-radius: clamp(8px, 1.2vw, 14px);
+  border-radius: 6px;
 }
 
-.moldura img { border-radius: clamp(5px, 0.8vw, 9px); }
+.moldura img { border-radius: 3px; }
+
+.legenda {
+  margin: 0.875rem 0 0;
+  color: var(--muted);
+  font-size: 0.6875rem;
+  letter-spacing: 0.14em;
+  line-height: 1.8;
+}
 
 /* --- blocos --- */
 
 .blocos {
   display: grid;
-  gap: clamp(1rem, 2.5vw, 1.5rem);
+  gap: clamp(1rem, 2vw, 1.25rem);
   grid-template-columns: 1fr;
-  margin: clamp(2.5rem, 7vw, 5rem) 0 0;
+  margin: clamp(3rem, 8vw, 5.5rem) 0 0;
 }
 
 @media (min-width: 56rem) {
   .blocos { grid-template-columns: repeat(3, 1fr); }
 }
 
+/* Módulo de rack: plaqueta de rótulo em cima, conteúdo embaixo. */
 .bloco {
-  background: var(--surface);
+  background: var(--panel);
   border: 1px solid var(--line);
-  border-radius: 12px;
-  padding: clamp(1.25rem, 2.5vw, 1.75rem);
+  border-radius: 5px;
 }
 
+.bloco-rot {
+  margin: 0;
+  padding: 0.75rem clamp(1.125rem, 2vw, 1.375rem);
+  background: var(--surface2);
+  border-bottom: 1px solid var(--line);
+  border-radius: 4px 4px 0 0;
+  color: var(--muted);
+}
+
+.bloco-corpo { padding: clamp(1.125rem, 2vw, 1.375rem); }
+
 .bloco h2 {
-  font-family: 'Space Grotesk', system-ui, sans-serif;
   font-weight: 700;
   font-size: 1.0625rem;
-  letter-spacing: -0.01em;
-  margin: 0 0 0.625rem;
+  letter-spacing: -0.015em;
+  line-height: 1.35;
+  margin: 0 0 0.5rem;
 }
 
 .bloco p {
   margin: 0;
   color: var(--muted);
   font-size: 0.9375rem;
-  line-height: 1.6;
+  line-height: 1.65;
 }
 
 /* --- rodapé --- */
 
 .rodape {
-  margin: clamp(3rem, 8vw, 6rem) 0 0;
-  padding-top: clamp(1.5rem, 4vw, 2.5rem);
+  margin: clamp(3.5rem, 9vw, 6rem) 0 0;
+  padding-top: clamp(2rem, 5vw, 3rem);
   border-top: 1px solid var(--line);
-  text-align: center;
 }
 
-.estagio { margin: 0; color: var(--text); font-weight: 500; }
+.rodape-grade {
+  display: grid;
+  gap: clamp(2rem, 5vw, 3rem);
+  grid-template-columns: 1fr;
+}
 
-.contato { margin: 0.5rem 0 0; color: var(--muted); }
+@media (min-width: 40rem) {
+  .rodape-grade { grid-template-columns: 1fr 1fr; }
+}
 
-/* Neutro de propósito: ciano é do VS, e um link de contato em ciano roubaria
-   essa leitura. O hover engrossa o sublinhado em vez de trocar a cor — apagar
-   ou escurecer um link no hover parece defeito, não interação. */
-.contato a {
+.campo-rot { margin: 0 0 0.75rem; color: var(--muted); }
+
+.estagio { margin: 0; max-width: 22rem; font-weight: 500; }
+
+.contato p { margin: 0 0 1.125rem; color: var(--muted); max-width: 22rem; }
+
+/* Botão de painel. Neutro de propósito: ciano é do VS, e um contato em ciano
+   roubaria essa leitura. O hover acende a borda em vez de trocar a cor do
+   texto — apagar ou escurecer um link no hover parece defeito, não interação. */
+.botao {
+  display: inline-block;
   color: var(--text);
-  text-decoration-thickness: 1px;
-  text-underline-offset: 3px;
+  text-decoration: none;
+  border: 1px solid var(--edge);
+  border-radius: 3px;
+  padding: 0.75rem 1.125rem;
+  transition: border-color 0.15s ease, background-color 0.15s ease;
 }
 
-.contato a:hover { text-decoration-thickness: 2px; }
+.botao:hover {
+  border-color: var(--text);
+  background: var(--surface2);
+}
+
+/* Sem JS o #fala entrega o endereço em texto; ele não é o botão. */
+#fala { color: var(--muted); }
 
 .assinatura {
-  margin: clamp(1.5rem, 4vw, 2.5rem) 0 0;
+  margin: clamp(2.5rem, 6vw, 4rem) 0 0;
   color: var(--muted);
-  font-size: 0.875rem;
+  font-size: 0.8125rem;
 }
 
-/* Respeita quem pediu menos movimento — não há animação hoje, mas o site
-   não deve introduzir nenhuma sem passar por aqui. */
+/* --- movimento --- */
+
+/* Toda animação daqui segue a mesma regra: o estado final é o estado padrão do
+   elemento e só o "from" mora na keyframe. Com animação desligada — movimento
+   reduzido, navegador antigo, CSS pela metade — tudo aparece já no lugar. */
+@keyframes entra {
+  from { opacity: 0; transform: translateY(6px); }
+}
+
+@keyframes surge {
+  from { opacity: 0; }
+}
+
+@keyframes pista {
+  from { transform: scaleX(0); }
+}
+
+/* Sequência de abertura, de cima para baixo: marca, tese linha por linha,
+   apoio, e por fim as duas pistas entrando escalonadas. */
+.barra { animation: surge 0.6s ease-out both; }
+.eyebrow { animation: entra 0.7s 0.05s ease-out both; }
+.linha { animation: entra 0.7s 0.12s ease-out both; }
+.linha:nth-child(2) { animation-delay: 0.19s; }
+.linha:nth-child(3) { animation-delay: 0.26s; }
+.sub { animation: entra 0.7s 0.33s ease-out both; }
+.pista { animation: pista 0.9s 0.45s cubic-bezier(0.2, 0.8, 0.15, 1) both; }
+.canal.click .pista { animation-delay: 0.59s; }
+
+/* Cabeça de leitura: uma linha de 1px cruzando as duas pistas uma vez, como o
+   playhead do app passando pela waveform. Decorativa e finita — nada de laço
+   infinito comendo bateria de quem está no palco. */
+@keyframes leitura {
+  from { background-position-x: 0%; opacity: 0; }
+  18% { opacity: 0.5; }
+  82% { opacity: 0.5; }
+  to { background-position-x: 100%; opacity: 0; }
+}
+
+@media (min-width: 40rem) {
+  /* Só onde as duas pistas ocupam as linhas 1 e 2 da grade. Em tela estreita a
+     grade tem o destino no meio e a cabeça de leitura cruzaria texto. */
+  .canais::after {
+    content: '';
+    /* Absoluta de propósito: como item de grade posicionado, ela reservava a
+       coluna 2 nas linhas 1 e 2 e empurrava a pista do VS uma linha para baixo,
+       desalinhando o rótulo. Fora do fluxo, ela ainda usa a área da grade como
+       bloco contêiner, mas não entra no posicionamento automático. */
+    position: absolute;
+    inset: 0;
+    /* Linha final explícita: para um item absoluto, o "auto" da borda final
+       resolve na borda do contêiner, e a varredura passava por cima dos
+       rótulos de destino em vez de parar no fim das pistas. */
+    grid-column: 2 / 3;
+    grid-row: 1 / 3;
+    background: linear-gradient(var(--text), var(--text)) no-repeat;
+    background-size: 1px 100%;
+    opacity: 0;
+    animation: leitura 1.9s 1.3s ease-in-out both;
+  }
+}
+
+/* Revelação ao entrar em cena, sem JavaScript: a linha do tempo é o próprio
+   scroll. Fica dentro do @supports porque, sem suporte, animation-timeline é
+   ignorado e a animação rodaria no carregamento — com metade do conteúdo
+   escondido abaixo da dobra até o usuário chegar lá. */
+@supports (animation-timeline: view()) {
+  .cabeca,
+  .figura,
+  .bloco,
+  .campo,
+  .assinatura {
+    animation: entra 1s linear both;
+    animation-timeline: view();
+    animation-range: entry 0% entry 55%;
+  }
+
+  /* Escalonado por posição: no desktop os três módulos entram juntos, e o atraso
+     em porcentagem de scroll é o que dá a cadência. */
+  .bloco:nth-child(2) { animation-range: entry 8% entry 63%; }
+  .bloco:nth-child(3) { animation-range: entry 16% entry 71%; }
+  .campo:nth-child(2) { animation-range: entry 8% entry 63%; }
+
+  /* O filete do cabeçalho é riscado da esquerda para a direita. A linha do
+     tempo é declarada na seção porque um elemento de 1px de altura tem fase de
+     entrada degenerada — a animação sairia em corte seco. */
+  .palco { view-timeline-name: --palco; }
+
+  .risco {
+    transform-origin: left center;
+    animation: risca 1s linear both;
+    animation-timeline: --palco;
+    animation-range: entry 0% entry 35%;
+  }
+
+  @keyframes risca {
+    from { transform: scaleX(0); }
+  }
+}
+
+/* Painel pegando luz: a borda acende, sem deslocamento e sem cursor de clique —
+   os módulos não são clicáveis e não devem prometer que são. */
+.bloco, .moldura {
+  transition: border-color 0.2s ease, background-color 0.2s ease;
+}
+
+.bloco:hover, .moldura:hover { border-color: var(--edge); }
+
+/* Respeita quem pediu menos movimento. */
 @media (prefers-reduced-motion: reduce) {
   *, *::before, *::after { animation: none !important; transition: none !important; }
 }

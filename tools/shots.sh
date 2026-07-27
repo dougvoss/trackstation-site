@@ -30,8 +30,13 @@ fi
 
 for largura in 360 768 1440; do
   saida="shots/${prefixo}${largura}.png"
+  # --force-prefers-reduced-motion desliga a animação de entrada, senão a
+  # captura sai no meio dela: metade do hero em opacity 0. O estado final da
+  # animação é o estado padrão do CSS, então é o mesmo quadro que o usuário vê
+  # ao fim — e de passagem verifica o caminho de movimento reduzido.
   google-chrome --headless=new --disable-gpu --no-sandbox --hide-scrollbars \
     --window-size="${largura},2400" \
+    --force-prefers-reduced-motion \
     --screenshot="$saida" \
     "$alvo" 2>/dev/null
   printf '%s\n' "$saida"

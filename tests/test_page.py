@@ -8,6 +8,10 @@ import re
 
 ROOT = pathlib.Path(__file__).resolve().parent.parent
 
+# Space Grotesk é a voz do produto; Space Mono carrega os rótulos serigrafados.
+# Ambas auto-hospedadas: uma delas virando link do gstatic é requisição externa.
+FONTES = ("space-grotesk-latin.woff2", "space-mono-latin.woff2")
+
 
 def _read(nome):
     caminho = ROOT / nome
@@ -105,12 +109,15 @@ def test_nenhuma_requisicao_externa():
     assert not externas, f"URLs externas encontradas: {externas}"
 
 
-def test_fonte_e_local():
+def test_fontes_sao_locais():
     css = _css()
-    assert "assets/fonts/space-grotesk-latin.woff2" in css
-    woff2 = ROOT / "assets/fonts/space-grotesk-latin.woff2"
-    assert woff2.exists(), "arquivo da fonte não existe"
-    assert woff2.stat().st_size < 60 * 1024, "fonte grande demais para inline crítico"
+    for nome in FONTES:
+        caminho = f"assets/fonts/{nome}"
+        assert caminho in css, f"{nome} não é usada pela folha de estilo"
+        woff2 = ROOT / caminho
+        assert woff2.exists(), f"arquivo de {nome} não existe"
+        assert woff2.stat().st_size < 60 * 1024, \
+            f"{nome} grande demais para inline crítico"
 
 
 def test_og_html_nenhuma_requisicao_externa():
@@ -118,11 +125,13 @@ def test_og_html_nenhuma_requisicao_externa():
     assert not externas, f"URLs externas encontradas em tools/og.html: {externas}"
 
 
-def test_og_html_fonte_e_local():
+def test_og_html_fontes_sao_locais():
     html = _og_html()
-    assert "assets/fonts/space-grotesk-latin.woff2" in html
-    woff2 = ROOT / "assets/fonts/space-grotesk-latin.woff2"
-    assert woff2.exists(), "arquivo da fonte não existe"
+    for nome in FONTES:
+        assert f"assets/fonts/{nome}" in html, \
+            f"o cartão não usa {nome} — divergiria da página"
+        assert (ROOT / f"assets/fonts/{nome}").exists(), \
+            f"arquivo de {nome} não existe"
 
 
 def test_imagens_referenciadas_existem_no_disco():

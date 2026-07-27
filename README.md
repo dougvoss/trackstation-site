@@ -5,6 +5,15 @@ por GitHub Pages.
 
 Sem build: os arquivos deste repositório são os arquivos servidos.
 
+## Ver localmente
+
+    xdg-open index.html             # abre o arquivo direto no navegador
+    python3 -m http.server 8000     # ou sirva em http://localhost:8000
+
+As duas funcionam: a página não faz nenhuma requisição de rede e todos os
+caminhos são relativos. O `mailto` do contato é montado por JavaScript e
+funciona igual em `file://`.
+
 ## Verificação
 
     python3 -m pytest tests/ -v      # contrato da página (ver abaixo)
@@ -19,7 +28,8 @@ afirmar sem olhar a página:
   `theme-color`, `alt` da imagem do palco);
 - zero requisição externa — URLs absolutas **e** protocolo-relativas
   (`//cdn…`), na página e no cartão de compartilhamento;
-- fonte auto-hospedada, e todo asset citado existindo no disco;
+- fontes auto-hospedadas (Space Grotesk e Space Mono), na página e no cartão,
+  e todo asset citado existindo no disco;
 - e-mail fora do HTML em texto plano, com fallback `<noscript>`;
 - restrições globais: um único `<script>` (inline, só para o `mailto`) e
   ausência de `prefers-color-scheme`;
@@ -58,14 +68,18 @@ roda todas as checagens antes de somar — não aborta na primeira falha.
 
 Rodados à mão, quando a fonte ou o cartão de compartilhamento mudam:
 
-    ./tools/fetch_font.py            # rebaixa o subset latin da Space Grotesk
+    ./tools/fetch_font.py            # rebaixa os subsets latin das duas fontes
     ./tools/make_og.sh               # regenera assets/og.png (1200x630)
     ./tools/shots.sh                 # captura em 360, 768 e 1440 px
     ./tools/shots.sh <url>           # o mesmo, contra o site publicado
 
 - `fetch_font.py` extrai a URL do CSS do Google Fonts (os hashes do gstatic
-  rotacionam) e grava `assets/fonts/space-grotesk-latin.woff2`.
+  rotacionam) e grava `space-grotesk-latin.woff2` e `space-mono-latin.woff2`
+  em `assets/fonts/`.
 - `make_og.sh` e `shots.sh` precisam do **`google-chrome`** no PATH.
+- `shots.sh` captura com movimento reduzido forçado: a animação de entrada do
+  hero termina no estado padrão do CSS, então é o mesmo quadro final que o
+  usuário vê — e sem isso a captura sai no meio da animação.
 - `make_og.sh` também precisa do **Pillow** (`pip install Pillow`), que usa só
   para conferir que a captura saiu em 1200x630.
 
