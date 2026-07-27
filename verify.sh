@@ -12,7 +12,7 @@ consulta() {  # consulta <nome> <tipo> [resolver_url]
 }
 
 checa() {  # checa <rótulo> <nome> <tipo> <padrão-esperado>
-  local dados resposta
+  local dados resposta pattern="$4"
 
   # Tentar com Cloudflare primeiro
   resposta=$(consulta "$2" "$3" "https://cloudflare-dns.com/dns-query")
@@ -47,25 +47,46 @@ except Exception:
     return
   fi
 
-  # Fazer o matching
-  if [ -z "$dados" ]; then
-    printf '  FALHA %-18s esperado ~%s, veio: %s\n' "$1" "$4" "<vazio>"
-    falhas=$((falhas + 1))
-  elif printf '%s' "$dados" | grep -qi -- "$4"; then
-    printf '  OK    %-18s %s\n' "$1" "$dados"
+  # Verificar se é check SET (order-agnostic, para multi-value records)
+  if [[ "$pattern" == SET:* ]]; then
+    local required_items="${pattern#SET:}"
+    local check_result
+    check_result=$(echo "$dados" | python3 -c "
+import sys
+data = sys.stdin.read()
+required = '''$required_items'''.split('|')
+required = [item.strip() for item in required]
+all_found = all(item in data for item in required)
+print('OK' if all_found else 'FAIL')
+")
+
+    if [ "$check_result" = "OK" ]; then
+      printf '  OK    %-18s %s\n' "$1" "$dados"
+    else
+      printf '  FALHA %-18s esperado ~%s, veio: %s\n' "$1" "$required_items" "$dados"
+      falhas=$((falhas + 1))
+    fi
   else
-    printf '  FALHA %-18s esperado ~%s, veio: %s\n' "$1" "$4" "$dados"
-    falhas=$((falhas + 1))
+    # Fazer o matching com grep (order-dependent patterns)
+    if [ -z "$dados" ]; then
+      printf '  FALHA %-18s esperado ~%s, veio: %s\n' "$1" "$pattern" "<vazio>"
+      falhas=$((falhas + 1))
+    elif printf '%s' "$dados" | grep -qi -- "$pattern"; then
+      printf '  OK    %-18s %s\n' "$1" "$dados"
+    else
+      printf '  FALHA %-18s esperado ~%s, veio: %s\n' "$1" "$pattern" "$dados"
+      falhas=$((falhas + 1))
+    fi
   fi
 }
 
 echo "== e-mail =="
-checa "MX"     "$DOM"          MX   "mx1\.improvmx\.com.*mx2\.improvmx\.com"
+checa "MX"     "$DOM"          MX   "SET:mx1.improvmx.com|mx2.improvmx.com"
 checa "SPF"    "$DOM"          TXT  "include:spf\.improvmx\.com"
 checa "DMARC"  "_dmarc.$DOM"   TXT  "p=reject"
 
 echo "== página =="
-checa "A apex" "$DOM"          A    "185\.199\.108\.153.*185\.199\.109\.153.*185\.199\.110\.153.*185\.199\.111\.153"
+checa "A apex" "$DOM"          A    "SET:185.199.108.153|185.199.109.153|185.199.110.153|185.199.111.153"
 checa "CNAME"  "www.$DOM"      CNAME "dougvoss\.github\.io"
 
 echo "== DNSSEC =="
