@@ -20,7 +20,10 @@ DESTINO = (pathlib.Path(__file__).resolve().parent.parent
 def baixar(url, args=()):
     try:
         return subprocess.run(
-            ["curl", "-sS", "-m", "30", "-A", UA, *args, url],
+            # -f faz o curl sair com erro em resposta não-2xx. Sem ele, um 404
+            # do gstatic voltava como "sucesso" com corpo de HTML de erro e o
+            # except abaixo era código morto.
+            ["curl", "-sS", "-f", "-m", "30", "-A", UA, *args, url],
             capture_output=True, check=True).stdout
     except subprocess.CalledProcessError as e:
         sys.exit(f"curl falhou: {e.stderr.decode(errors='replace')}")

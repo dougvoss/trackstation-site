@@ -173,26 +173,98 @@ checa_dnssec() {  # checa_dnssec <rótulo> <nome>
   fi
 }
 
+consulta_http() {  # consulta_http <url> <seguir:sim|nao> -> "<código> <destino>"
+  # Com seguir=nao, o destino é o Location da resposta (vazio se não houver).
+  # Com seguir=sim, o destino é a URL final depois de seguir os redirects.
+  if [ "$2" = "sim" ]; then
+    curl -sL -o /dev/null -m 20 -w '%{http_code} %{url_effective}' "$1"
+  else
+    curl -s -o /dev/null -m 20 -w '%{http_code} %{redirect_url}' "$1"
+  fi
+}
+
+avalia_http() {  # avalia_http <código> <destino> <cód-esperado> <destino-esperado|-> -> OK|FALHA|ERRO
+  local codigo="$1" destino="$2" cod_esp="$3" dest_esp="$4"
+
+  # 000 é "o curl nunca conectou", não "o servidor respondeu errado" — são
+  # diagnósticos diferentes e não podem sair com a mesma mensagem, do mesmo
+  # jeito que o caminho de DNS separa ERRO de FALHA.
+  if [ "$codigo" = "000" ]; then
+    echo "ERRO"
+  elif [ "$codigo" != "$cod_esp" ]; then
+    echo "FALHA"
+  elif [ "$dest_esp" != "-" ] && [ "$destino" != "$dest_esp" ]; then
+    echo "FALHA"
+  else
+    echo "OK"
+  fi
+}
+
+checa_http() {  # checa_http <rótulo> <url> <cód-esperado> <destino-esperado|-> <seguir:sim|nao>
+  local rotulo="$1" url="$2" cod_esp="$3" dest_esp="$4" seguir="$5"
+  local resposta codigo destino veredito
+
+  resposta=$(consulta_http "$url" "$seguir")
+  codigo=${resposta%% *}
+  destino=${resposta#* }
+  veredito=$(avalia_http "$codigo" "$destino" "$cod_esp" "$dest_esp")
+
+  if [ "$veredito" != "OK" ]; then
+    # Mesmo princípio das checagens de DNS: uma falha aparente numa única
+    # tentativa nunca é definitiva por si só — pode ser oscilação de rede ou
+    # do CDN. Tenta mais uma vez antes de alarmar.
+    resposta=$(consulta_http "$url" "$seguir")
+    codigo=${resposta%% *}
+    destino=${resposta#* }
+    veredito=$(avalia_http "$codigo" "$destino" "$cod_esp" "$dest_esp")
+  fi
+
+  case "$veredito" in
+    OK)
+      printf '  OK    %-18s HTTP %s%s\n' "$rotulo" "$codigo" "${destino:+ -> $destino}"
+      ;;
+    ERRO)
+      printf '  ERRO  %-18s não conectou (curl 000) — rede, não o site\n' "$rotulo"
+      falhas=$((falhas + 1))
+      ;;
+    FALHA)
+      local esperado="HTTP $cod_esp"
+      [ "$dest_esp" != "-" ] && esperado="$esperado -> $dest_esp"
+      printf '  FALHA %-18s esperado %s, veio: HTTP %s%s\n' \
+        "$rotulo" "$esperado" "$codigo" "${destino:+ -> $destino}"
+      falhas=$((falhas + 1))
+      ;;
+  esac
+}
+
 echo "== e-mail =="
 checa "MX"     "$DOM"          MX   "SET:mx1.improvmx.com|mx2.improvmx.com"
-checa "SPF"    "$DOM"          TXT  "include:spf\.improvmx\.com"
+# O qualificador faz parte do contrato: sem ele na expressão, "~all" e "-all"
+# ficariam indistinguíveis e uma troca silenciosa passaria verde. "~all" é o
+# valor correto e fica — quem rejeita é o DMARC (p=reject com adkim=s/aspf=s),
+# e é também o que o painel do ImprovMX recomenda e valida. Simétrico ao
+# DMARC da linha abaixo, que já exigia "p=reject".
+checa "SPF"    "$DOM"          TXT  "v=spf1 include:spf\.improvmx\.com ~all"
 checa "DMARC"  "_dmarc.$DOM"   TXT  "p=reject"
 
 echo "== página =="
 checa "A apex" "$DOM"          A    "SET:185.199.108.153|185.199.109.153|185.199.110.153|185.199.111.153"
 checa "CNAME"  "www.$DOM"      CNAME "SET:dougvoss.github.io"
 
+echo "== nameservers =="
+# Trocar nameserver é a operação mais perigosa neste domínio: levaria o DNSSEC
+# junto. SET: porque a ordem das respostas multivaloradas rotaciona — os dois
+# resolvers devolvem estes dois nomes em ordens diferentes.
+checa "NS"     "$DOM"          NS   "SET:a.sec.dns.br|b.sec.dns.br"
+
 echo "== DNSSEC =="
 checa_dnssec "DS publicado" "$DOM"
 
 echo "== HTTPS =="
-codigo=$(curl -s -o /dev/null -m 20 -w '%{http_code}' "https://$DOM/")
-if [ "$codigo" = "200" ]; then
-  printf '  OK    %-18s HTTP %s\n' "apex responde" "$codigo"
-else
-  printf '  FALHA %-18s HTTP %s\n' "apex responde" "$codigo"
-  falhas=$((falhas + 1))
-fi
+checa_http "apex responde"     "https://$DOM/"      200 "-"               nao
+checa_http "HTTP redireciona"  "http://$DOM/"       301 "https://$DOM/"   nao
+checa_http "www redireciona"   "https://www.$DOM/"  301 "https://$DOM/"   nao
+checa_http "www chega ao apex" "https://www.$DOM/"  200 "https://$DOM/"   sim
 
 echo
 if [ "$falhas" -eq 0 ]; then

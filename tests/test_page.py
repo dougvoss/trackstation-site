@@ -27,6 +27,32 @@ def _og_html():
     return _read("tools/og.html")
 
 
+def _paleta():
+    """Lê as custom properties de cor do :root do style.css.
+
+    Medir contraste sobre literais hex repetidos no teste não prova nada sobre
+    a página: trocar --muted na folha de estilo por qualquer cor reprovada
+    deixaria a suíte verde. O número tem de sair do arquivo que é servido.
+    """
+    m = re.search(r":root\s*\{(.*?)\}", _css(), re.S)
+    assert m, "bloco :root não encontrado em style.css"
+    pares = re.findall(r"--([\w-]+)\s*:\s*(#[0-9A-Fa-f]{6})\b", m.group(1))
+    assert pares, "nenhuma cor encontrada no :root de style.css"
+    return {nome: valor.upper() for nome, valor in pares}
+
+
+# Casa URL absoluta (https://…) e também protocolo-relativa (//cdn.exemplo.com).
+# A protocolo-relativa é o vazamento mais plausível e escapava do padrão antigo.
+# O look-behind exige delimitador de atributo ou de url() antes do "//", para
+# não confundir com comentário de linha "// …" do JavaScript.
+_EXTERNA = re.compile(r"""(?:https?://|(?<=["'(=])//)[^\s"')]+""")
+
+
+def _urls_externas(*textos):
+    return [u for u in _EXTERNA.findall("\n".join(textos))
+            if "trackstation.com.br" not in u]
+
+
 def _luminancia(cor_hex):
     r, g, b = (int(cor_hex[i:i + 2], 16) / 255 for i in (1, 3, 5))
     def linear(c):
@@ -75,8 +101,7 @@ def test_imagem_do_palco_tem_alt_descritivo():
 # --- isolamento de rede ---
 
 def test_nenhuma_requisicao_externa():
-    urls = re.findall(r"https?://[^\s\"')]+", _html() + _css())
-    externas = [u for u in urls if "trackstation.com.br" not in u]
+    externas = _urls_externas(_html(), _css())
     assert not externas, f"URLs externas encontradas: {externas}"
 
 
@@ -89,8 +114,7 @@ def test_fonte_e_local():
 
 
 def test_og_html_nenhuma_requisicao_externa():
-    urls = re.findall(r"https?://[^\s\"')]+", _og_html())
-    externas = [u for u in urls if "trackstation.com.br" not in u]
+    externas = _urls_externas(_og_html())
     assert not externas, f"URLs externas encontradas em tools/og.html: {externas}"
 
 
@@ -99,6 +123,21 @@ def test_og_html_fonte_e_local():
     assert "assets/fonts/space-grotesk-latin.woff2" in html
     woff2 = ROOT / "assets/fonts/space-grotesk-latin.woff2"
     assert woff2.exists(), "arquivo da fonte não existe"
+
+
+def test_imagens_referenciadas_existem_no_disco():
+    """Todo asset citado na página existe de fato no repositório.
+
+    Apagar assets/og.png quebra silenciosamente todo preview de link: o
+    og:image é a única referência e nada mais no repositório aponta para ele.
+    """
+    html = _html()
+    refs = set(re.findall(r'(?:src|href)="(assets/[^"]+)"', html))
+    refs |= set(re.findall(
+        r'content="https://trackstation\.com\.br/(assets/[^"]+)"', html))
+    assert refs, "nenhum asset referenciado encontrado — a extração quebrou"
+    faltando = sorted(r for r in refs if not (ROOT / r).exists())
+    assert not faltando, f"assets referenciados que não existem: {faltando}"
 
 
 # --- proteção do e-mail ---
@@ -123,23 +162,75 @@ def test_nojekyll_existe():
     assert (ROOT / ".nojekyll").exists()
 
 
-# --- contraste (valores medidos, não estimados) ---
+# --- restrições globais ---
 
-GROUND = "#0E1116"
-SURFACE = "#161B22"
+def test_javascript_apenas_para_o_mailto():
+    """Um único <script>, inline, e só para montar o mailto.
+
+    Um snippet de analytics embutido, sem nenhuma URL absoluta, passaria por
+    toda a suíte de "zero requisição externa" — que existe para barrá-lo.
+    """
+    html = _html()
+    assert html.count("<script") == 1, \
+        f"esperado exatamente 1 <script>, achei {html.count('<script')}"
+    m = re.search(r"<script([^>]*)>(.*?)</script>", html, re.S)
+    assert m, "o <script> não fecha"
+    atributos, corpo = m.group(1), m.group(2)
+    assert "src" not in atributos, "o único <script> deve ser inline, sem src"
+    assert "mailto:" in corpo, "o único <script> existe para montar o mailto"
+
+
+def test_tema_escuro_fixo_sem_prefers_color_scheme():
+    """Tema escuro fixo: a página não segue a preferência de tema do sistema.
+
+    prefers-reduced-motion é outra media query e continua permitida, e
+    `color-scheme: dark` também — aquela declara o tema fixo, não lê
+    preferência. Comentário que cita a proibição não conta como uso, mesma
+    regra de test_faint_nao_e_usado_em_texto.
+    """
+    sem_comentarios = re.sub(r"/\*.*?\*/", "", _css(), flags=re.S)
+    assert "prefers-color-scheme" not in sem_comentarios, \
+        "o tema é escuro fixo — não seguir prefers-color-scheme"
+
+
+def test_ciano_e_exclusivo_do_vs():
+    """Ciano é o VS e nada mais. A declaração em :root é definição, não uso.
+
+    Já regrediu uma vez neste repositório: um commit levou
+    `color: var(--cyan)` para `.contato a` e outro precisou removê-lo.
+    """
+    css = re.sub(r"/\*.*?\*/", "", _css(), flags=re.S)
+    css = re.sub(r":root\s*\{.*?\}", "", css, flags=re.S)
+    usos = [sel.strip()
+            for sel, corpo in re.findall(r"([^{}]+)\{([^{}]*)\}", css)
+            if "--cyan" in corpo or "#35C6D6" in corpo.upper()]
+    assert usos == [".vs"], f"ciano pertence ao VS; apareceu também em: {usos}"
+
+
+# --- contraste (medido na paleta que a folha de estilo declara de fato) ---
+
+def test_paleta_do_css_esta_completa():
+    p = _paleta()
+    faltando = [n for n in ("ground", "surface", "text", "muted", "amber", "cyan")
+                if n not in p]
+    assert not faltando, f"cores ausentes no :root de style.css: {faltando}"
+
 
 def test_corpo_atinge_aaa():
-    assert ratio("#EAEEF3", GROUND) >= 7.0
+    p = _paleta()
+    assert ratio(p["text"], p["ground"]) >= 7.0
 
 
 def test_texto_secundario_atinge_aa():
-    assert ratio("#8A94A3", GROUND) >= 4.5
-    assert ratio("#8A94A3", SURFACE) >= 4.5
+    p = _paleta()
+    assert ratio(p["muted"], p["ground"]) >= 4.5
+    assert ratio(p["muted"], p["surface"]) >= 4.5
 
 
 def test_acentos_atingem_aa():
-    assert ratio("#F5B841", GROUND) >= 4.5   # click
-    assert ratio("#35C6D6", GROUND) >= 4.5   # VS
+    p = _paleta()
+    assert ratio(p["amber"], p["ground"]) >= 4.5   # click
+    assert ratio(p["cyan"], p["ground"]) >= 4.5    # VS
 
 
 def test_faint_nao_e_usado_em_texto():

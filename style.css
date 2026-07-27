@@ -2,6 +2,11 @@
    O site usa as mesmas cores porque é o mesmo produto.
    faint (#5C6675) está deliberadamente ausente: 3,25:1 reprova AA. */
 :root {
+  /* Declara ao navegador que a página é escura, para que barra de rolagem e
+     controles nativos venham escuros também. Não é prefers-color-scheme: não
+     lê preferência do sistema, apenas informa o tema fixo que já usamos. */
+  color-scheme: dark;
+
   --ground: #0E1116;
   --surface: #161B22;
   --surface2: #1E252E;
@@ -140,6 +145,9 @@ h1 {
 
 .contato { margin: 0.5rem 0 0; color: var(--muted); }
 
+/* Neutro de propósito: ciano é do VS, e um link de contato em ciano roubaria
+   essa leitura. O hover engrossa o sublinhado em vez de trocar a cor — apagar
+   ou escurecer um link no hover parece defeito, não interação. */
 .contato a {
   color: var(--text);
   text-decoration-thickness: 1px;

@@ -9,6 +9,15 @@
 # required" no stderr é ruído e não impede a captura.
 set -euo pipefail
 cd "$(dirname "$0")/.."
+
+# Sem esta guarda, um google-chrome ausente cai no "set -e" com o stderr da
+# captura mandado para /dev/null: o script morre em silêncio absoluto (código
+# 127, saída vazia, nem "command not found").
+if ! command -v google-chrome >/dev/null 2>&1; then
+  echo "erro: google-chrome não encontrado no PATH — necessário para a captura headless" >&2
+  exit 1
+fi
+
 mkdir -p shots
 
 if [ $# -gt 0 ]; then
