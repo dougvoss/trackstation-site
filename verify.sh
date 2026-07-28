@@ -237,6 +237,32 @@ checa_http() {  # checa_http <rótulo> <url> <cód-esperado> <destino-esperado|-
   esac
 }
 
+checa_404_proprio() {  # checa_404_proprio <url>
+  # O status 404 sozinho não distingue nada: o GitHub Pages devolve 404 tanto
+  # servindo o nosso 404.html quanto servindo a página branca dele. O que separa
+  # os dois é o corpo, então este check olha o corpo — e exige as duas coisas
+  # juntas, porque um 200 com o nosso HTML seria igualmente errado (caminho
+  # inexistente respondendo sucesso confunde buscador).
+  local url="$1" codigo corpo tentativa
+  for tentativa in 1 2; do
+    corpo=$(curl -s -m 20 -w '\n%{http_code}' "$url" 2>/dev/null)
+    codigo=${corpo##*$'\n'}
+    if [ "$codigo" = "404" ] && printf '%s' "$corpo" | grep -q 'não está no setlist'; then
+      printf '  OK    %-18s HTTP 404 com a nossa página\n' "404 personalizado"
+      return
+    fi
+    [ "$tentativa" = 1 ] && continue
+  done
+  if [ "$codigo" = "000" ]; then
+    printf '  ERRO  %-18s não conectou (curl 000) — rede, não o site\n' "404 personalizado"
+  elif [ "$codigo" != "404" ]; then
+    printf '  FALHA %-18s esperado HTTP 404, veio: HTTP %s\n' "404 personalizado" "$codigo"
+  else
+    printf '  FALHA %-18s HTTP 404, mas o corpo não é o nosso 404.html\n' "404 personalizado"
+  fi
+  falhas=$((falhas + 1))
+}
+
 echo "== e-mail =="
 checa "MX"     "$DOM"          MX   "SET:mx1.improvmx.com|mx2.improvmx.com"
 # O qualificador faz parte do contrato: sem ele na expressão, "~all" e "-all"
@@ -265,6 +291,15 @@ checa_http "apex responde"     "https://$DOM/"      200 "-"               nao
 checa_http "HTTP redireciona"  "http://$DOM/"       301 "https://$DOM/"   nao
 checa_http "www redireciona"   "https://www.$DOM/"  301 "https://$DOM/"   nao
 checa_http "www chega ao apex" "https://www.$DOM/"  200 "https://$DOM/"   sim
+
+# Os três arquivos que existem no repositório mas ninguém abre no navegador, e
+# por isso quebram em silêncio: um arquivo que não entrou no commit só aparece
+# aqui. O 404 é o único caso em que a resposta certa é um código de erro, e o
+# único que precisa olhar o corpo — ver checa_404_proprio.
+echo "== descoberta =="
+checa_http "robots.txt"   "https://$DOM/robots.txt"   200 "-" nao
+checa_http "sitemap.xml"  "https://$DOM/sitemap.xml"  200 "-" nao
+checa_404_proprio "https://$DOM/nao-existe"
 
 echo
 if [ "$falhas" -eq 0 ]; then

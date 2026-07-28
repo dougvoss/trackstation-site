@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!-- Uma URL só, por enquanto. Quando os quatro idiomas entrarem, cada um ganha
+     o seu <url> aqui: as tags hreflang cobrem a relação entre eles, mas o
+     lastmod só existe neste arquivo. -->
+<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
+  <url>
+    <loc>https://trackstation.com.br/</loc>
+    <lastmod>2026-07-28</lastmod>
+  </url>
+</urlset>

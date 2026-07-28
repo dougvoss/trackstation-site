@@ -7,14 +7,42 @@
 <meta name="description" content="Playback para quem toca ao vivo: VS num canal, click no outro. Escolher, tocar, duck e mute sai tudo no pedal — as mãos ficam no instrumento.">
 <meta name="theme-color" content="#0E1116">
 <link rel="icon" href="assets/favicon.png" sizes="32x32">
+<link rel="apple-touch-icon" href="assets/icon.png">
 <link rel="canonical" href="https://trackstation.com.br/">
 <meta property="og:type" content="website">
 <meta property="og:title" content="TrackStation — playback ao vivo, no seu pé">
 <meta property="og:description" content="VS num canal, click no outro. O show inteiro no seu pé.">
 <meta property="og:url" content="https://trackstation.com.br/">
 <meta property="og:image" content="https://trackstation.com.br/assets/og.png">
+<!-- Dimensões declaradas: sem elas o primeiro compartilhamento renderiza com o
+     espaço errado, porque o scraper monta o card antes de baixar a imagem. -->
+<meta property="og:image:width" content="1200">
+<meta property="og:image:height" content="630">
+<meta property="og:image:alt" content="Cartão do TrackStation: VS num canal, click no outro — o show inteiro no seu pé.">
 <meta property="og:locale" content="pt_BR">
+<!-- Único dado que o X não deduz do Open Graph: sem esta linha o card sai
+     pequeno, com a imagem cortada em quadrado. -->
+<meta name="twitter:card" content="summary_large_image">
 <link rel="stylesheet" href="style.css">
+<!-- A Space Grotesk desenha o h1, que é o maior elemento da primeira tela. Sem
+     o preload ela só entra na fila depois do CSS, e o título aparece na fonte
+     de sistema antes de trocar. A mono carrega os rótulos e não precisa. -->
+<link rel="preload" href="assets/fonts/space-grotesk-latin.woff2" as="font" type="font/woff2" crossorigin>
+<script type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@type": "SoftwareApplication",
+  "name": "TrackStation",
+  "applicationCategory": "MultimediaApplication",
+  "applicationSubCategory": "Playback para música ao vivo",
+  "operatingSystem": "macOS, Windows, Linux",
+  "url": "https://trackstation.com.br/",
+  "image": "https://trackstation.com.br/assets/og.png",
+  "inLanguage": "pt-BR",
+  "description": "Playback para quem toca ao vivo: VS num canal, click no outro. Escolher, tocar, duck e mute sai tudo no pedal — as mãos ficam no instrumento.",
+  "author": { "@type": "Person", "name": "Douglas Voss" }
+}
+</script>
 </head>
 <body>
 
@@ -23,7 +51,10 @@
 <div class="barra">
   <div class="barra-conteudo">
     <span class="marca">
-      <img src="assets/icon.png" width="40" height="40" alt="">
+      <!-- 80px para uma marca exibida a 40: cobre densidade 2x. A fonte de
+           512px serve o apple-touch-icon, não esta barra — servi-la aqui
+           custava 41 KB para desenhar 40 pixels. -->
+      <img src="assets/icon-80.png" width="40" height="40" alt="">
       <span class="marca-nome">TrackStation<span class="reg">®</span></span>
     </span>
     <span class="rot estado">Em desenvolvimento</span>
@@ -68,10 +99,28 @@
     </div>
     <figure class="figura">
       <div class="moldura">
-        <!-- Dimensões intrínsecas: é o maior asset da página. Sem elas, .moldura
-             colapsa para o padding e o conteúdo abaixo salta ~500px ao carregar. -->
-        <img src="assets/palco.png" width="1920" height="985"
-             alt="Tela do Modo Palco do TrackStation: setlist em várias colunas, waveform dos dois canais com o click em âmbar e o VS em ciano, e faders de MASTER, VS e CLICK.">
+        <picture>
+          <!-- Três larguras em WebP; o PNG fica como último recurso. O `sizes`
+               não é chute: no desktop a imagem é exibida a 1040 CSS px
+               (--largura 72rem, menos os dois gutters de 3rem, menos o filete
+               de 0,625rem da moldura de cada lado), e abaixo disso o gutter
+               vira 5vw, então a largura acompanha a viewport. Errar aqui não
+               quebra nada visível — só faz o navegador baixar a variante
+               errada, que é exatamente o custo que este bloco existe para
+               cortar. -->
+          <source type="image/webp"
+                  srcset="assets/palco-640.webp 640w,
+                          assets/palco-1040.webp 1040w,
+                          assets/palco-1920.webp 1920w"
+                  sizes="(min-width: 72rem) 1040px,
+                         (min-width: 60rem) calc(100vw - 7.25rem),
+                         (min-width: 25rem) 87.6vw,
+                         calc(100vw - 3.25rem)">
+          <!-- Dimensões intrínsecas: é o maior asset da página. Sem elas, .moldura
+               colapsa para o padding e o conteúdo abaixo salta ~500px ao carregar. -->
+          <img src="assets/palco.png" width="1920" height="985"
+               alt="Tela do Modo Palco do TrackStation: setlist em várias colunas, waveform dos dois canais com o click em âmbar e o VS em ciano, e faders de MASTER, VS e CLICK.">
+        </picture>
       </div>
       <figcaption class="rot legenda">
         Setlist em blocos · os dois canais na mesma waveform · faders de master, VS e click
@@ -115,6 +164,30 @@
       </div>
     </article>
 
+  </section>
+
+  <!-- Ficha técnica, imediatamente antes do contato: "roda no meu setup?" é a
+       última pergunta de quem já se convenceu, e ficar sem resposta aqui é o
+       que faz a pessoa fechar a aba em vez de escrever. Formato de placa
+       traseira de equipamento — rótulo à esquerda, valor à direita. -->
+  <section class="ficha" aria-labelledby="ficha-titulo">
+    <div class="cabeca">
+      <h2 class="rot" id="ficha-titulo">Onde roda</h2>
+      <span class="risco" aria-hidden="true"></span>
+    </div>
+    <dl class="ficha-grade">
+      <div class="ficha-linha">
+        <dt class="rot">Desktop</dt>
+        <dd>macOS · Windows · Linux</dd>
+      </div>
+      <!-- Separado do desktop de propósito. Chegar aqui, ler "Android" e
+           descobrir que não existe app é pior que não prometer nada: quem toca
+           decide equipamento por confiança, e ela só quebra uma vez. -->
+      <div class="ficha-linha">
+        <dt class="rot">Mobile</dt>
+        <dd>iOS · Android <span class="ainda">— em desenvolvimento</span></dd>
+      </div>
+    </dl>
   </section>
 
   <footer class="rodape">

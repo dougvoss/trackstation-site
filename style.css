@@ -229,13 +229,18 @@ p .vs, p .click { font-weight: 600; }
   .canal-destino { grid-column: 3; }
 }
 
+/* Frase, não rótulo: a serigrafia funciona em VS, CLICK, PEDAL — palavra curta
+   e isolada. Em caixa alta espaçada, uma frase inteira de 11px quebrando em
+   duas linhas era o ponto mais difícil de ler da página no celular. Fica a mono,
+   que é a voz do texto de serviço; sai a caixa alta. */
 .canal-nota {
   grid-column: 2 / -1;
   margin: 0.375rem 0 0;
   color: var(--muted);
-  font-size: 0.6875rem;
-  letter-spacing: 0.16em;
-  line-height: 1.5;
+  font-size: 0.75rem;
+  text-transform: none;
+  letter-spacing: 0.01em;
+  line-height: 1.55;
 }
 
 /* --- cabeçalho de seção --- */
@@ -270,12 +275,15 @@ p .vs, p .click { font-weight: 600; }
 
 .moldura img { border-radius: 3px; }
 
+/* Mesma razão da .canal-nota: três segmentos separados por · são uma frase, e
+   em 360px ela ocupava três linhas de maiúsculas espaçadas. */
 .legenda {
   margin: 0.875rem 0 0;
   color: var(--muted);
-  font-size: 0.6875rem;
-  letter-spacing: 0.14em;
-  line-height: 1.8;
+  font-size: 0.75rem;
+  text-transform: none;
+  letter-spacing: 0.01em;
+  line-height: 1.6;
 }
 
 /* --- blocos --- */
@@ -324,6 +332,48 @@ p .vs, p .click { font-weight: 600; }
   line-height: 1.65;
 }
 
+/* --- ficha técnica --- */
+
+.ficha { margin: clamp(3rem, 8vw, 5.5rem) 0 0; }
+
+/* Placa traseira: um bloco só, linhas separadas por filete. O overflow existe
+   para o raio da borda cortar o filete das linhas internas. */
+.ficha-grade {
+  margin: 0;
+  background: var(--panel);
+  border: 1px solid var(--line);
+  border-radius: 5px;
+  overflow: hidden;
+}
+
+.ficha-linha {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 0.375rem 1.25rem;
+  padding: clamp(0.875rem, 2vw, 1.125rem) clamp(1.125rem, 2vw, 1.375rem);
+  border-top: 1px solid var(--line);
+}
+
+.ficha-linha:first-child { border-top: 0; }
+
+.ficha-linha dt { color: var(--muted); }
+
+.ficha-linha dd { margin: 0; font-size: 0.9375rem; }
+
+/* Ressalva no mesmo tom do texto secundário: presente na mesma linha do que
+   ressalva, sem virar aviso legal nem competir com o valor. */
+.ficha-linha .ainda { color: var(--muted); }
+
+/* Coluna de rótulo fixa: com max-content, acrescentar uma linha de rótulo longo
+   realinha todas as outras. Largura fixa mantém os valores alinhados enquanto a
+   ficha cresce. */
+@media (min-width: 40rem) {
+  .ficha-linha {
+    grid-template-columns: 11rem minmax(0, 1fr);
+    align-items: baseline;
+  }
+}
+
 /* --- rodapé --- */
 
 .rodape {
@@ -368,6 +418,9 @@ p .vs, p .click { font-weight: 600; }
 
 /* Sem JS o #fala entrega o endereço em texto; ele não é o botão. */
 #fala { color: var(--muted); }
+
+/* Só no 404: o botão é o único caminho de saída da página. */
+.volta { margin: clamp(1.75rem, 4vw, 2.25rem) 0 0; }
 
 .assinatura {
   margin: clamp(2.5rem, 6vw, 4rem) 0 0;
@@ -444,6 +497,7 @@ p .vs, p .click { font-weight: 600; }
   .cabeca,
   .figura,
   .bloco,
+  .ficha-linha,
   .campo,
   .assinatura {
     animation: entra 1s linear both;
@@ -459,15 +513,22 @@ p .vs, p .click { font-weight: 600; }
 
   /* O filete do cabeçalho é riscado da esquerda para a direita. A linha do
      tempo é declarada na seção porque um elemento de 1px de altura tem fase de
-     entrada degenerada — a animação sairia em corte seco. */
+     entrada degenerada — a animação sairia em corte seco.
+     Cada seção com cabeçalho declara a sua: a busca por nome sobe pelos
+     ancestrais e alcança os irmãos anteriores, então um único `--palco` faria o
+     filete da ficha ser riscado pelo scroll da seção do palco, muito antes de
+     ele entrar em cena. */
   .palco { view-timeline-name: --palco; }
+  .ficha { view-timeline-name: --ficha; }
 
   .risco {
     transform-origin: left center;
     animation: risca 1s linear both;
-    animation-timeline: --palco;
     animation-range: entry 0% entry 35%;
   }
+
+  .palco .risco { animation-timeline: --palco; }
+  .ficha .risco { animation-timeline: --ficha; }
 
   @keyframes risca {
     from { transform: scaleX(0); }
